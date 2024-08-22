@@ -1,6 +1,8 @@
 import random
 import numpy as np
 from collections import deque
+import keras
+import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
@@ -133,3 +135,65 @@ class Q:
     def show_q_table(self):
         print(self.q_table)
 
+
+class REINFORCE:
+    def __init__(self,state_size, action_size,lr=0.05,gamma=0.99,n_layers=64):
+        self.state_size=state_size
+        self.action_size=action_size
+        self.lr=lr
+        self.gamma=gamma
+        self.n_layers=n_layers
+        self.model = self._build_model()
+        self.optimizer = keras.optimizers.Adam(learning_rate=self.lr)
+
+    def _build_model(self):
+        model = keras.Sequential([
+        keras.layers.Dense(self.n_layers, activation='relu', input_shape=(self.state_size,)),
+        keras.layers.Dense(self.action_size, activation='softmax')
+        ])
+        return model
+    
+    def fit(self,env,n_episodes=1000):
+        for i in range(n_episodes):
+            state = env.reset()
+            done = False
+            Actions, States, Rewards = [], [], []
+
+            while not done:
+                state = np.expand_dims(state, axis=0)
+                probs = self.model(state)
+                action = np.random.choice(self.action_size, p=np.squeeze(probs))
+
+                new_state, rew, done, _ = env.step(action)
+                
+                Actions.append(action)
+                States.append(state)
+                Rewards.append(rew)
+
+                state=new_state
+
+            DiscountedReturns = []
+            G = 0.0
+            for t in reversed(range(len(Rewards))):
+                G = Rewards[t] + self.gamma * G
+                DiscountedReturns.insert(0, G) 
+            DiscountedReturns = np.array(DiscountedReturns)
+            DiscountedReturns = (DiscountedReturns - np.mean(DiscountedReturns)) / (np.std(DiscountedReturns) + 1e-8)
+            with tf.GradientTape() as tape:
+                total_loss = 0
+                for State, Action, G in zip(States, Actions, DiscountedReturns):
+                    State = np.expand_dims(State, axis=0)
+                    probs = self.model(State)
+                    log_prob = tf.math.log(probs[0, Action])
+                    total_loss += -log_prob * G
+
+            grads = tape.gradient(total_loss, self.model.trainable_variables)
+            self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+
+
+            
+
+
+
+
+        
