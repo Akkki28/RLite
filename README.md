@@ -65,7 +65,7 @@ The `REINFORCE` class implements the REINFORCE algorithm with a neural network-b
 ### Methods
 - **`__init__(self, state_size, action_size, lr=0.005, gamma=0.9999, n_layers=128, score_type=1)`**: Initializes the REINFORCE model.
 - **`_build_model(self)`**: Builds the neural network model.
-- **`fit(self, env, n_episodes=1000)`**: Trains the model on the environment.
+- **`fit(self, env, n_episodes=1000,t_max=200)`**: Trains the model on the environment.
 - **`save(self, name)`**: Saves model weights to a file.
 
 ## Usage
@@ -73,8 +73,7 @@ The `REINFORCE` class implements the REINFORCE algorithm with a neural network-b
 To use these models, create an instance of the class you want to use, and call the `fit` method with your environment. For saving and loading models, use the `save` and `load` methods, respectively.
 
 ## Requirements
-
-- PyTorch
-- NumPy
-
-Ensure you have these libraries installed before running the code.
+### Installing Dependencies
+```
+pip install -r requirements.txt
+```
