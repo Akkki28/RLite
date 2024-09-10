@@ -1,5 +1,5 @@
 # RLite
-Developed a Python library that streamlines the implementation of reinforcement learning algorithms like DQN,REINFORCE supporting both finite and infinite state spaces.
+a Python library that streamlines the implementation of reinforcement learning algorithms like DQN,REINFORCE supporting both finite and infinite state spaces.
 
 ## DQN (Deep Q-Network)
 
