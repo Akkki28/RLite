@@ -1,106 +1,94 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import numpy as np
 import random
+import numpy as np
 from collections import deque
+import keras
+import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
 import os
-class DQN(nn.Module):
-    def __init__(self, state_size, action_size, gamma=0.95, epsilon=1.0, epsilon_decay=0.995, epsilon_min=0.01, learning_rate=0.001, n_layers=24):
-        super(DQN, self).__init__()
+class DQN:
+    def __init__(self, state_size, action_size,gamma = 0.95,epsilon = 1.0,epsilon_decay = 0.995,epsilon_min = 0.01,learning_rate = 0.001,loss='mse',n_layers=24):
         self.state_size = state_size
         self.action_size = action_size
-        self.memory = deque(maxlen=2000)
-        self.gamma = gamma
-        self.epsilon = epsilon
-        self.epsilon_decay = epsilon_decay
-        self.epsilon_min = epsilon_min
-        self.learning_rate = learning_rate
-        self.n_layers = n_layers
-        self.model = self._build_model()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.memory = deque(maxlen=2000) 
+        self.gamma = gamma 
+        self.epsilon = epsilon 
+        self.epsilon_decay = epsilon_decay 
+        self.epsilon_min = epsilon_min 
+        self.learning_rate= learning_rate
+        self.loss = loss
+        self.n_layers=n_layers
+        self.model = self._build_model() 
     
     def _build_model(self):
-        model = nn.Sequential(
-            nn.Linear(self.state_size, self.n_layers),
-            nn.ReLU(),
-            nn.Linear(self.n_layers, self.n_layers),
-            nn.ReLU(),
-            nn.Linear(self.n_layers, self.action_size)
-        )
+        
+        model = Sequential()
+        model.add(Dense(self.n_layers, input_dim=self.state_size, activation='relu')) 
+        model.add(Dense(self.n_layers, activation='relu')) 
+        model.add(Dense(self.action_size, activation='linear')) 
+        model.compile(loss=self.loss,
+                      optimizer=Adam(learning_rate=self.learning_rate))
         return model
-
+    
     def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+        self.memory.append((state, action, reward, next_state, done)) 
 
     def act(self, state):
-        if np.random.rand() <= self.epsilon:
+        if np.random.rand() <= self.epsilon: 
             return random.randrange(self.action_size)
-        state = torch.FloatTensor(state)
-        with torch.no_grad():
-            act_values = self.model(state)
-        return torch.argmax(act_values).item()
+        act_values = self.model.predict(state) 
+        return np.argmax(act_values[0]) 
 
-    def replay(self, batch_size):
-        if len(self.memory) < batch_size:
-            return
-
-        minibatch = random.sample(self.memory, batch_size)
-        for state, action, reward, next_state, done in minibatch:
-            state = torch.FloatTensor(state)
-            next_state = torch.FloatTensor(next_state)
-            reward = torch.FloatTensor([reward])
-            action = torch.LongTensor([action])
-            
-            target = reward
-            if not done:
-                target = reward + self.gamma * torch.max(self.model(next_state)).item()
-
-            current_q_value = self.model(state)[0][action]
-            loss = F.mse_loss(current_q_value, target)
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
+    def replay(self, batch_size): 
+        minibatch = random.sample(self.memory, batch_size) 
+        for state, action, reward, next_state, done in minibatch: 
+            target = reward 
+            if not done: 
+                target = (reward + self.gamma * 
+                          np.amax(self.model.predict(next_state)[0])) 
+            target_f = self.model.predict(state) 
+            target_f[0][action] = target
+            self.model.fit(state, target_f, epochs=1, verbose=0) 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
     def load(self, name):
-        self.model.load_state_dict(torch.load(name))
+        self.model.load_weights(name)
 
     def save(self, name):
-        torch.save(self.model.state_dict(), name)
-
-    def fit(self, env, n_episodes=1000, batch_size=32, t_max=200, score_type=1, penalty=-10):
+        self.model.save_weights(name)
+    
+    def fit(self,env,n_episodes=1000,batch_size=32,t_max=200,score_type=1,penalty=-10):
         output_dir = 'model_output/weights/'
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-
-        for e in range(n_episodes):
-            state = env.reset()
-            state = state[0]
-            state = np.reshape(state, [1, self.state_size])
+        done = False
+        for e in range(n_episodes): 
+            state = env.reset() 
+            state=state[0]
+            state = np.reshape(state, [1,self.state_size])
             score = 0
-            for time in range(t_max):
-                action = self.act(state)
-                next_state, reward, done, _, _ = env.step(action)
-                reward = reward if not done else penalty
-                if score_type == 1:
-                    score = time
+            for time in range(t_max):  
+
+                action = self.act(state) 
+                next_state, reward, done, _ ,_= env.step(action) 
+                reward = reward if not done else penalty 
+                if score_type==1:
+                    score=time
                 else:
-                    score += reward
+                    score+=reward
                 next_state = np.reshape(next_state, [1, self.state_size])
-                self.remember(state, action, reward, next_state, done)
-                state = next_state
-                if done:
-                    print(f"episode: {e}/{n_episodes}, score: {score}")
-                    break
+                self.remember(state, action, reward, next_state, done) 
+                state = next_state 
+                if done: 
+                    print("episode: {}/{}, score: {}" 
+                        .format(e, n_episodes, score))
+                    break 
             if len(self.memory) > batch_size:
-                self.replay(batch_size)
+                self.replay(batch_size) 
             if e % 100 == 0:
-                self.save(output_dir + f"weights_{e:04d}.pth")
-      
+                self.save(output_dir + "weights_" + '{:04d}'.format(e) + ".weights.h5")      
 
 
 class Q:
@@ -148,68 +136,64 @@ class Q:
         print(self.q_table)
 
 
-class REINFORCE(nn.Module):
-    def __init__(self, state_size, action_size, lr=0.005, gamma=0.9999, n_layers=128):
-        super(REINFORCE, self).__init__() 
-        self.state_size = state_size
-        self.action_size = action_size
-        self.lr = lr
-        self.gamma = gamma
-        self.n_layers = n_layers
-        self.model = self._build_model() 
-        self.optim = torch.optim.Adam(self.model.parameters(), lr=self.lr) 
+class REINFORCE:
+    def __init__(self,state_size, action_size,lr=0.05,gamma=0.99,n_layers=64):
+        self.state_size=state_size
+        self.action_size=action_size
+        self.lr=lr
+        self.gamma=gamma
+        self.n_layers=n_layers
+        self.model = self._build_model()
+        self.optimizer = keras.optimizers.Adam(learning_rate=self.lr)
 
     def _build_model(self):
-        model = torch.nn.Sequential(
-            torch.nn.Linear(self.state_size, self.n_layers),
-            torch.nn.ReLU(),
-            torch.nn.Linear(self.n_layers, self.action_size),
-            torch.nn.Softmax(dim=-1)
-        )
+        model = keras.Sequential([
+        keras.layers.Dense(self.n_layers, activation='relu', input_shape=(self.state_size,)),
+        keras.layers.Dense(self.action_size, activation='softmax')
+        ])
         return model
     
-    def fit(self, env, n_episodes=1000):
+    def fit(self,env,n_episodes=1000):
         for i in range(n_episodes):
-            state, _ = env.reset()
-            state = torch.tensor(state, dtype=torch.float)
+            state = env.reset()
             done = False
             Actions, States, Rewards = [], [], []
-            t = 0
-            while not done:
-                t += 1
-                if t>200:
-                    break
-                probs = self.model(state)
-                dist = torch.distributions.Categorical(probs=probs)
-                action = dist.sample().item()
-                new_state, reward, done, _, __ = env.step(action)
 
-                Actions.append(torch.tensor(action, dtype=torch.int))
+            while not done:
+                state = np.expand_dims(state, axis=0)
+                probs = self.model(state)
+                action = np.random.choice(self.action_size, p=np.squeeze(probs))
+
+                new_state, rew, done, _ = env.step(action)
+                
+                Actions.append(action)
                 States.append(state)
-                Rewards.append(reward)
-                state = torch.tensor(new_state, dtype=torch.float)
-            
-            print(f'Episode: {i} Reward: {t}')
+                Rewards.append(rew)
+
+                state=new_state
 
             DiscountedReturns = []
-            for t in range(len(Rewards)):
-                G = 0.0
-                for k, r in enumerate(Rewards[t:]):
-                    G += (self.gamma**k) * r
-                DiscountedReturns.append(G)
+            G = 0.0
+            for t in reversed(range(len(Rewards))):
+                G = Rewards[t] + self.gamma * G
+                DiscountedReturns.insert(0, G) 
+            DiscountedReturns = np.array(DiscountedReturns)
+            DiscountedReturns = (DiscountedReturns - np.mean(DiscountedReturns)) / (np.std(DiscountedReturns) + 1e-8)
+            with tf.GradientTape() as tape:
+                total_loss = 0
+                for State, Action, G in zip(States, Actions, DiscountedReturns):
+                    State = np.expand_dims(State, axis=0)
+                    probs = self.model(State)
+                    log_prob = tf.math.log(probs[0, Action])
+                    total_loss += -log_prob * G
 
-            for State, Action, G in zip(States, Actions, DiscountedReturns):
-                probs = self.model(State)
-                dist = torch.distributions.Categorical(probs=probs)
-                log_prob = dist.log_prob(Action)
-                
-                loss = -log_prob * G
-                self.optim.zero_grad()
-                loss.backward()
-                self.optim.step()
-
-    def save(self, name):
-        torch.save(self.model.state_dict(), name)
-    
+            grads = tape.gradient(total_loss, self.model.trainable_variables)
+            self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
 
+            
+
+
+
+
+        
