@@ -47,7 +47,7 @@ This document provides a brief overview of key reinforcement learning algorithms
 
 ## Usage
 
-To use these models, create an instance of the class you want to use, and call the `fit` method with your environment. For saving and loading models, use the `save` and `load` methods, respectively.
+To use these models, create an instance of the class you want to use, and call the `fit` method with your suitable environment.
 
 ## Requirements
 ### Installing Dependencies
