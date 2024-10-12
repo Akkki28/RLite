@@ -1,72 +1,49 @@
 # RLite
-a Python library that streamlines the implementation of reinforcement learning algorithms like DQN,REINFORCE supporting both finite and infinite state spaces.
+a Python library that streamlines the implementation of reinforcement learning algorithms supporting both finite and infinite state spaces.
 
 ## DQN (Deep Q-Network)
 
-### Description
-The `DQN` class implements a Deep Q-Network algorithm with a neural network-based Q-function approximation enabling compatibility with infinite spaces. It uses experience replay and epsilon-greedy action selection as the behavioural policy.
+The DQN class implements the DQN algorithm. DQN is a combination of Q-learning and deep learning techniques, using a neural network to approximate the Q-value function. This allows it to handle complex environments with large state spaces effectively. DQN improves upon traditional Q-learning by utilizing experience replay and target networks to stabilize training.
 
-### Attributes
-- **state_size**: The dimensionality of the state space.
-- **action_size**: The number of possible actions in the environment.
-- **gamma**: Discount factor for future rewards (default: 0.95).
-- **epsilon**: Initial exploration rate (default: 1.0).
-- **epsilon_decay**: Decay rate of epsilon after each episode (default: 0.995).
-- **epsilon_min**: Minimum value of epsilon (default: 0.01).
-- **learning_rate**: Learning rate for the Adam optimizer (default: 0.001).
-- **n_layers**: Number of neurons in the hidden layers of the neural network (default: 24).
-- **model**: Neural network model defined in `_build_model()`.
-- **optimizer**: Adam optimizer for training the model.
-- **memory**: Replay memory for storing experiences.
-
-### Methods
-- **`__init__(self, state_size, action_size, gamma=0.95, epsilon=1.0, epsilon_decay=0.995, epsilon_min=0.01, learning_rate=0.001, n_layers=24)`**: Initializes the DQN model.
-- **`_build_model(self)`**: Builds the neural network model.
-- **`remember(self, state, action, reward, next_state, done)`**: Stores an experience in memory.
-- **`act(self, state)`**: Chooses an action based on the current policy (epsilon-greedy).
-- **`replay(self, batch_size)`**: Trains the model using a batch of experiences from memory.
-- **`load(self, name)`**: Loads model weights from a file.
-- **`save(self, name)`**: Saves model weights to a file.
-- **`fit(self, env, n_episodes=1000, batch_size=32, t_max=200, score_type=1, penalty=-10)`**: Trains the model on the environment.
+### Key Features:
+- **Experience Replay**: Stores past experiences to break the correlation between consecutive samples.
+- **Target Network**: A separate network used to compute target Q-values, updated periodically to improve stability.
 
 ## Q-learning
 
-### Description
-The `Q` class implements the Q-learning algorithm with a tabular Q-function approximation usable only in finite spaces but is much faster than function approximation/policy graient methods.
+The QLearning class implements the Q-learning algorithm. Q-learning is a value-based method that aims to learn the optimal action-value function (Q-function) for a given policy. It updates the Q-values iteratively based on the Bellman equation, allowing the agent to learn from its actions without requiring a model of the environment.
 
-### Attributes
-- **env**: The environment to interact with.
-- **gamma**: Discount factor for future rewards (default: 0.1).
-- **epsilon**: Initial exploration rate (default: 1.0).
-- **epsilon_decay**: Decay rate of epsilon after each episode (default: 0.995).
-- **epsilon_min**: Minimum value of epsilon (default: 0.01).
-- **learning_rate**: Learning rate for Q-value updates (default: 0.001).
-- **q_table**: Table of Q-values.
-
-### Methods
-- **`__init__(self, env, gamma=0.1, epsilon=1.0, epsilon_decay=0.995, epsilon_min=0.01, learning_rate=0.001)`**: Initializes the Q-learning model.
-- **`fit(self, n_episodes, t_max=2000, score_type=1, penalty=-10)`**: Trains the model on the environment.
-- **`show_q_table(self)`**: Prints the Q-table displaying Q values of all actions.
+### Key Features:
+- **Off-Policy Learning**: Learns the value of the optimal policy independently from the policy being followed.
+- **Exploration vs. Exploitation**: Balances between exploring new actions and exploiting known rewards.
 
 ## REINFORCE
 
-### Description
-The `REINFORCE` class implements the REINFORCE algorithm with a neural network-based policy.
+The REINFORCE class implements the REINFORCE algorithm. REINFORCE is a policy gradient method that directly optimizes the policy by maximizing the expected return. It uses Monte Carlo sampling to estimate the gradients of the policy, enabling the agent to learn from complete episodes of experience.
 
-### Attributes
-- **state_size**: The dimensionality of the state space.
-- **action_size**: The number of possible actions in the environment.
-- **lr**: Learning rate for the Adam optimizer (default: 0.005).
-- **gamma**: Discount factor for future rewards (default: 0.9999).
-- **n_layers**: Number of neurons in the hidden layer of the neural network (default: 128).
-- **model**: Neural network model defined in `_build_model()`.
-- **score_type**: Method for calculating episode rewards (default: 1).
+### Key Features:
+- **Policy-Based**: Focuses on learning the policy directly rather than estimating the value function.
+- **High Variance**: The gradients can have high variance, which may lead to unstable training.
 
-### Methods
-- **`__init__(self, state_size, action_size, lr=0.005, gamma=0.9999, n_layers=128, score_type=1)`**: Initializes the REINFORCE model.
-- **`_build_model(self)`**: Builds the neural network model.
-- **`fit(self, env, n_episodes=1000,t_max=200)`**: Trains the model on the environment.
-- **`save(self, name)`**: Saves model weights to a file.
+## PPO (Proximal Policy Optimization)
+
+The PPO class implements the PPO algorithm. PPO is an advanced policy gradient method that aims to improve training stability and efficiency. It uses a clipped surrogate objective to limit the changes to the policy during each update, ensuring that the new policy does not deviate too much from the old one.
+
+### Key Features:
+- **Clipped Objective**: Prevents large updates that could degrade performance.
+- **Adaptive Learning Rate**: Adjusts the learning rate based on the performance of the agent.
+
+## A3C (Asynchronous Actor-Critic)
+
+The A3C class implements the A3C algorithm. A3C is a hybrid algorithm that combines the advantages of both value-based and policy-based methods. It uses multiple parallel agents to explore the environment and share gradients, leading to faster and more stable training.
+
+### Key Features:
+- **Asynchronous Training**: Multiple agents interact with the environment simultaneously, sharing their experiences.
+- **Actor-Critic Architecture**: Uses both a policy network (actor) and a value network (critic) to improve learning efficiency.
+
+## Conclusion
+
+This document provides a brief overview of key reinforcement learning algorithms. Understanding these algorithms is crucial for developing effective RL solutions across various applications.
 
 ## Usage
 
