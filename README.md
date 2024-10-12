@@ -41,13 +41,9 @@ The A3C class implements the A3C algorithm. A3C is a hybrid algorithm that combi
 - **Asynchronous Training**: Multiple agents interact with the environment simultaneously, sharing their experiences.
 - **Actor-Critic Architecture**: Uses both a policy network (actor) and a value network (critic) to improve learning efficiency.
 
-## Conclusion
-
-This document provides a brief overview of key reinforcement learning algorithms. Understanding these algorithms is crucial for developing effective RL solutions across various applications.
-
 ## Usage
 
-To use these models, create an instance of the class you want to use, and call the `fit` method with your suitable environment.
+To use these models, create an instance of the class you want to use, and call the `fit` method with your suitable environment.If the evironment is not suitable according to the given implementation change the code with the requiremnts of the given environment
 
 ## Requirements
 ### Installing Dependencies
